@@ -1,0 +1,843 @@
+import React, { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import {
+  Settings,
+  Warehouse,
+  Globe,
+  Palette,
+  Database,
+  Plus,
+  Edit,
+  Trash2,
+  Save,
+  RotateCcw,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  Eye,
+  EyeOff,
+  Download,
+  Upload,
+  RefreshCw
+} from 'lucide-react'
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs'
+import { Switch } from '../components/ui/Switch'
+import { Badge } from '../components/ui/Badge'
+import { DataTable } from '../components/ui/DataTable'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../components/ui/Dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '../components/ui/Form'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select'
+import { PageLoader } from '../components/ui/LoadingSpinner'
+import { EmptyState } from '../components/ui/EmptyState'
+import { useTheme } from '../lib/theme'
+import { Depot, Parametres } from '../types'
+import { repository } from '../lib/repositories'
+import { formatFCFA, formatDate, exportToCSV } from '../lib/utils'
+
+// Schémas de validation
+const depotSchema = z.object({
+  nom: z.string().min(1, 'Le nom est obligatoire'),
+  adresse: z.string().optional(),
+  capacite_kg: z.number().min(0).optional(),
+  actif: z.boolean().default(true),
+})
+
+const parametresSchema = z.object({
+  mode_valorisation: z.enum(['FIFO', 'LIFO', 'CMUP']),
+  seuil_alerte_stock: z.number().min(0),
+  devise: z.string().min(1),
+  taux_tva: z.number().min(0).max(100),
+  backup_auto: z.boolean(),
+  notifications_email: z.boolean(),
+})
+
+type DepotFormData = z.infer<typeof depotSchema>
+type ParametresFormData = z.infer<typeof parametresSchema>
+
+export function Parametres() {
+  const { t, i18n } = useTranslation()
+  const { theme, setTheme } = useTheme()
+  
+  // États
+  const [depots, setDepots] = useState<Depot[]>([])
+  const [parametres, setParametres] = useState<Parametres | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showDepotDialog, setShowDepotDialog] = useState(false)
+  const [editingDepot, setEditingDepot] = useState<Depot | null>(null)
+  const [activeTab, setActiveTab] = useState('general')
+  const [showSecrets, setShowSecrets] = useState(false)
+
+  // Forms
+  const depotForm = useForm<DepotFormData>({
+    resolver: zodResolver(depotSchema),
+    defaultValues: {
+      nom: '',
+      adresse: '',
+      capacite_kg: undefined,
+      actif: true,
+    },
+  })
+
+  const parametresForm = useForm<ParametresFormData>({
+    resolver: zodResolver(parametresSchema),
+    defaultValues: {
+      mode_valorisation: 'FIFO',
+      seuil_alerte_stock: 1000,
+      devise: 'FCFA',
+      taux_tva: 18,
+      backup_auto: true,
+      notifications_email: false,
+    },
+  })
+
+  // Charger les données
+  const chargerDonnees = async () => {
+    setLoading(true)
+    try {
+      const [depotsData, parametresData] = await Promise.all([
+        repository.getDepots(),
+        repository.getParametres()
+      ])
+
+      setDepots(depotsData)
+      setParametres(parametresData)
+
+      // Initialiser le formulaire des paramètres
+      if (parametresData) {
+        parametresForm.reset(parametresData)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des paramètres:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    chargerDonnees()
+  }, [])
+
+  // Définition des colonnes pour les dépôts
+  const depotsColumns: ColumnDef<Depot>[] = useMemo(() => [
+    {
+      accessorKey: 'nom',
+      header: 'Nom',
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue('nom')}</div>
+      ),
+    },
+    {
+      accessorKey: 'adresse',
+      header: 'Adresse',
+      cell: ({ row }) => {
+        const adresse = row.getValue('adresse') as string
+        return (
+          <div className="max-w-48 truncate">
+            {adresse || '-'}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: 'capacite_kg',
+      header: 'Capacité (kg)',
+      cell: ({ row }) => {
+        const capacite = row.getValue('capacite_kg') as number
+        return capacite ? formatFCFA(capacite) : '-'
+      },
+    },
+    {
+      accessorKey: 'actif',
+      header: 'Statut',
+      cell: ({ row }) => {
+        const actif = row.getValue('actif') as boolean
+        return (
+          <Badge variant={actif ? 'default' : 'secondary'}>
+            {actif ? 'Actif' : 'Inactif'}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: 'date_creation',
+      header: 'Créé le',
+      cell: ({ row }) => formatDate(row.getValue('date_creation')),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleEditDepot(row.original)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleDeleteDepot(row.original.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [])
+
+  // Handlers
+  const handleSaveParametres = async (data: ParametresFormData) => {
+    setSaving(true)
+    try {
+      await repository.updateParametres(data)
+      setParametres({ ...parametres!, ...data })
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des paramètres:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCreateDepot = async (data: DepotFormData) => {
+    try {
+      const newDepot = await repository.createDepot(data)
+      setDepots(prev => [...prev, newDepot])
+      depotForm.reset()
+      setShowDepotDialog(false)
+    } catch (error) {
+      console.error('Erreur lors de la création du dépôt:', error)
+    }
+  }
+
+  const handleUpdateDepot = async (data: DepotFormData) => {
+    if (!editingDepot) return
+    
+    try {
+      const updatedDepot = await repository.updateDepot(editingDepot.id, data)
+      setDepots(prev => prev.map(d => d.id === editingDepot.id ? updatedDepot : d))
+      depotForm.reset()
+      setShowDepotDialog(false)
+      setEditingDepot(null)
+    } catch (error) {
+      console.error('Erreur lors de la modification du dépôt:', error)
+    }
+  }
+
+  const handleEditDepot = (depot: Depot) => {
+    setEditingDepot(depot)
+    depotForm.reset({
+      nom: depot.nom,
+      adresse: depot.adresse || '',
+      capacite_kg: depot.capacite_kg,
+      actif: depot.actif,
+    })
+    setShowDepotDialog(true)
+  }
+
+  const handleDeleteDepot = async (depotId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce dépôt ?')) {
+      try {
+        await repository.deleteDepot(depotId)
+        setDepots(prev => prev.filter(d => d.id !== depotId))
+      } catch (error) {
+        console.error('Erreur lors de la suppression du dépôt:', error)
+      }
+    }
+  }
+
+  const resetDepotForm = () => {
+    depotForm.reset()
+    setEditingDepot(null)
+    setShowDepotDialog(false)
+  }
+
+  const handleExportDepots = () => {
+    if (depots.length === 0) return
+    
+    const dataToExport = depots.map(depot => ({
+      Nom: depot.nom,
+      Adresse: depot.adresse || '',
+      'Capacité (kg)': depot.capacite_kg || '',
+      Statut: depot.actif ? 'Actif' : 'Inactif',
+      'Date création': formatDate(depot.date_creation)
+    }))
+
+    exportToCSV(dataToExport, 'depots')
+  }
+
+  const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      
+      // Validation et import des données
+      console.log('Import backup:', data)
+      // TODO: Implémenter l'import réel
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'import:', error)
+    }
+  }
+
+  const handleExportBackup = () => {
+    // TODO: Implémenter l'export complet
+    console.log('Export backup')
+  }
+
+  if (loading) {
+    return <PageLoader text={t('common.loading')} />
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+      >
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Paramètres</h1>
+          <p className="text-muted-foreground mt-1">Configuration de l'application</p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={chargerDonnees}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+          <TabsTrigger value="general" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Général
+          </TabsTrigger>
+          <TabsTrigger value="depots" className="gap-2">
+            <Warehouse className="h-4 w-4" />
+            Dépôts
+          </TabsTrigger>
+          <TabsTrigger value="interface" className="gap-2">
+            <Palette className="h-4 w-4" />
+            Interface
+          </TabsTrigger>
+          <TabsTrigger value="donnees" className="gap-2">
+            <Database className="h-4 w-4" />
+            Données
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Onglet Général */}
+        <TabsContent value="general">
+          <Card className="rounded-2xl">
+            <CardHeader>
+              <CardTitle>Paramètres généraux</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...parametresForm}>
+                <form onSubmit={parametresForm.handleSubmit(handleSaveParametres)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Mode de valorisation */}
+                    <FormField
+                      control={parametresForm.control}
+                      name="mode_valorisation"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mode de valorisation</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="FIFO">FIFO (Premier entré, premier sorti)</SelectItem>
+                              <SelectItem value="LIFO">LIFO (Dernier entré, premier sorti)</SelectItem>
+                              <SelectItem value="CMUP">CMUP (Coût moyen unitaire pondéré)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Méthode de valorisation des stocks utilisée pour le calcul des COGS
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Seuil d'alerte */}
+                    <FormField
+                      control={parametresForm.control}
+                      name="seuil_alerte_stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Seuil d'alerte stock (kg)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Quantité minimale avant déclenchement d'une alerte
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Devise */}
+                    <FormField
+                      control={parametresForm.control}
+                      name="devise"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Devise</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="FCFA">FCFA (Franc CFA)</SelectItem>
+                              <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                              <SelectItem value="USD">USD (Dollar US)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Taux TVA */}
+                    <FormField
+                      control={parametresForm.control}
+                      name="taux_tva"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Taux de TVA (%)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              max="100" 
+                              step="0.1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Options */}
+                  <div className="space-y-4 pt-6 border-t">
+                    <h3 className="font-medium">Options avancées</h3>
+                    
+                    <FormField
+                      control={parametresForm.control}
+                      name="backup_auto"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Sauvegarde automatique</FormLabel>
+                            <FormDescription>
+                              Effectuer une sauvegarde automatique quotidienne des données
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={parametresForm.control}
+                      name="notifications_email"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Notifications par email</FormLabel>
+                            <FormDescription>
+                              Recevoir des notifications par email pour les alertes de stock
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex gap-4 justify-end pt-6">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => parametresForm.reset()}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Réinitialiser
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={saving}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Dépôts */}
+        <TabsContent value="depots">
+          <Card className="rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Gestion des dépôts ({depots.length})</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleExportDepots}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter
+                  </Button>
+                  <Dialog open={showDepotDialog} onOpenChange={setShowDepotDialog}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nouveau dépôt
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingDepot ? 'Modifier le dépôt' : 'Nouveau dépôt'}
+                        </DialogTitle>
+                      </DialogHeader>
+                      
+                      <Form {...depotForm}>
+                        <form onSubmit={depotForm.handleSubmit(editingDepot ? handleUpdateDepot : handleCreateDepot)} className="space-y-4">
+                          <FormField
+                            control={depotForm.control}
+                            name="nom"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nom du dépôt *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="ex: Entrepôt Central" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={depotForm.control}
+                            name="adresse"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Adresse</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="ex: Zone industrielle, Abidjan" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={depotForm.control}
+                            name="capacite_kg"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Capacité (kg)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="0" 
+                                    placeholder="ex: 100000" 
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={depotForm.control}
+                            name="actif"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Dépôt actif</FormLabel>
+                                  <FormDescription>
+                                    Ce dépôt peut être utilisé pour les opérations
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="flex gap-4 justify-end pt-4">
+                            <Button type="button" variant="outline" onClick={resetDepotForm}>
+                              Annuler
+                            </Button>
+                            <Button type="submit">
+                              {editingDepot ? 'Modifier' : 'Créer'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {depots.length === 0 ? (
+                <EmptyState
+                  title="Aucun dépôt configuré"
+                  description="Créez votre premier dépôt pour commencer à gérer vos stocks"
+                  action={{
+                    label: "Créer un dépôt",
+                    onClick: () => setShowDepotDialog(true)
+                  }}
+                />
+              ) : (
+                <DataTable
+                  data={depots}
+                  columns={depotsColumns}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Interface */}
+        <TabsContent value="interface">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Thème */}
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>Apparence</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Thème</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: 'light', label: 'Clair', icon: '☀️' },
+                      { value: 'dark', label: 'Sombre', icon: '🌙' },
+                      { value: 'system', label: 'Système', icon: '⚙️' }
+                    ].map(({ value, label, icon }) => (
+                      <Button
+                        key={value}
+                        variant={theme === value ? 'default' : 'outline'}
+                        className="h-16 flex-col gap-2"
+                        onClick={() => setTheme(value as 'light' | 'dark' | 'system')}
+                      >
+                        <span className="text-xl">{icon}</span>
+                        <span className="text-xs">{label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Langue */}
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>Langue</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Langue de l'interface</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: 'fr', label: 'Français', flag: '🇫🇷' },
+                      { value: 'en', label: 'English', flag: '🇬🇧' }
+                    ].map(({ value, label, flag }) => (
+                      <Button
+                        key={value}
+                        variant={i18n.language === value ? 'default' : 'outline'}
+                        className="h-16 flex-col gap-2"
+                        onClick={() => i18n.changeLanguage(value)}
+                      >
+                        <span className="text-xl">{flag}</span>
+                        <span className="text-xs">{label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Onglet Données */}
+        <TabsContent value="donnees">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Sauvegarde */}
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>Sauvegarde et restauration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-start gap-4 p-4 bg-muted/30 rounded-lg">
+                  <Info className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">Sauvegarde complète</p>
+                    <p className="text-muted-foreground">
+                      Exporte toutes vos données (opérations, inventaire, paramètres) dans un fichier JSON.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button onClick={handleExportBackup} className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Télécharger la sauvegarde
+                  </Button>
+                  
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportBackup}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Button variant="outline" className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Restaurer depuis un fichier
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Informations système */}
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>Informations système</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Version de l'application</span>
+                    <span className="font-medium">1.0.0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Base de données</span>
+                    <Badge variant="outline">SQLite (Local)</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Dernière sauvegarde</span>
+                    <span className="font-medium">Jamais</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Espace utilisé</span>
+                    <span className="font-medium">~2.4 MB</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowSecrets(!showSecrets)}
+                    className="w-full"
+                  >
+                    {showSecrets ? (
+                      <><EyeOff className="h-4 w-4 mr-2" />Masquer les détails</>
+                    ) : (
+                      <><Eye className="h-4 w-4 mr-2" />Afficher les détails</>
+                    )}
+                  </Button>
+                  
+                  <AnimatePresence>
+                    {showSecrets && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 p-3 bg-muted/30 rounded-lg text-xs font-mono"
+                      >
+                        <div>Platform: Web</div>
+                        <div>Storage: localStorage</div>
+                        <div>Theme: {theme}</div>
+                        <div>Language: {i18n.language}</div>
+                        <div>Timestamp: {new Date().toISOString()}</div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

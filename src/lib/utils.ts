@@ -38,6 +38,18 @@ export function formatDateForInput(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+// Formatage des dates avec heure
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('fr-FR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(d);
+}
+
 // Génération d'ID unique
 export function generateId(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
