@@ -1,35 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { Layout } from './components/Layout';
+import { Dashboard } from './components/Dashboard';
+import { Operations } from './components/Operations';
+import { Inventaire } from './components/Inventaire';
+import { repository } from './lib/repositories';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialiser l'application
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        await repository.init();
+        
+        // Charger les données de seed si c'est la première fois
+        const operations = await repository.getOperations();
+        if (operations.length === 0) {
+          console.log('🌱 Chargement des données de démonstration...');
+          await repository.seedData();
+        }
+        
+        setInitialized(true);
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation:', error);
+        setInitialized(true); // Continue même en cas d'erreur
+      }
+    };
+
+    initApp();
+  }, []);
+
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'operations':
+        return <Operations />;
+      case 'inventaire':
+        return <Inventaire />;
+      case 'mouvements':
+        return <div className="text-center py-8">Page Mouvements - En construction</div>;
+      case 'parametres':
+        return <div className="text-center py-8">Page Paramètres - En construction</div>;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Initialisation de l'application...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+      {renderCurrentPage()}
+    </Layout>
+  );
 }
 
-export default App
+export default App;
