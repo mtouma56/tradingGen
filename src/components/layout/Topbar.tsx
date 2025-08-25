@@ -1,8 +1,9 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu, User, Bell, Search, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../ui/Button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar'
 import { Badge } from '../ui/Badge'
@@ -34,8 +35,15 @@ const pageData: Record<string, { title: string; subtitle?: string; icon?: React.
 
 export function Topbar({ isCollapsed, onToggleSidebar }: TopbarProps) {
   const { t } = useTranslation()
+  const { profile, signOut } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const currentPageData = pageData[location.pathname]
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <motion.header
@@ -127,14 +135,21 @@ export function Topbar({ isCollapsed, onToggleSidebar }: TopbarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2 h-9 px-2 hover:bg-accent">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src="" alt="Admin" />
+                  <AvatarImage src="" alt={profile?.full_name || profile?.email || 'User'} />
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                    <User className="h-4 w-4" />
+                    {profile?.full_name 
+                      ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                      : <User className="h-4 w-4" />
+                    }
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">Admin</span>
-                  <span className="text-xs text-muted-foreground">Gestionnaire</span>
+                  <span className="text-sm font-medium">
+                    {profile?.full_name || profile?.email?.split('@')[0] || 'Utilisateur'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {profile?.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                  </span>
                 </div>
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
@@ -142,9 +157,11 @@ export function Topbar({ isCollapsed, onToggleSidebar }: TopbarProps) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin User</p>
+                  <p className="text-sm font-medium leading-none">
+                    {profile?.full_name || 'Utilisateur'}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    admin@trading-hevea.com
+                    {profile?.email || 'email@example.com'}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -158,7 +175,10 @@ export function Topbar({ isCollapsed, onToggleSidebar }: TopbarProps) {
                 <span>Paramètres</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem 
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onClick={handleSignOut}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Déconnexion</span>
               </DropdownMenuItem>

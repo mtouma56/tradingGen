@@ -1,304 +1,211 @@
-# Trading Hévéa - Application Moderne de Gestion d'Inventaire FIFO
+# Trading Hévéa - Système de Gestion des Stocks et Opérations
 
-## 🎯 Vue d'ensemble du projet
+## 🎯 Vue d'ensemble du Projet
 
-**Trading Hévéa** est une application web moderne de gestion des opérations de trading d'hévéa et autres produits agricoles avec **interface shadcn/ui ultra-moderne** et **gestion complète d'inventaire** utilisant les méthodes de valorisation **FIFO** (First In, First Out) et **Coût Moyen Pondéré**.
+**Trading Hévéa** est un système complet de gestion des stocks et opérations pour le trading d'hévéa, conçu spécialement pour les équipes de 5-6 personnes. L'application offre une gestion complète des achats, ventes, stock et calculs FIFO avec une interface moderne et responsive.
 
-## 🎨 **NOUVELLE INTERFACE MODERNE - MODE STRICT UI/UX REFACTOR**
+### 🚀 Fonctionnalités Actuellement Complètes
 
-### ✨ Interface shadcn/ui Ultra-Moderne
-- 🎯 **Topbar moderne** avec logo, recherche globale, notifications, menu utilisateur
-- 🎯 **Sidebar collapsible** avec animations Framer Motion et tooltips
-- 🎯 **Dashboard révolutionnaire** avec KPI Cards intégrées à Recharts
-- 🎯 **Tableaux avancés** avec TanStack Table (tri, filtrage, pagination, export)
-- 🎯 **Design system** : Couleurs #0EA5E9 (cyan), #22C55E (green), #F59E0B (amber)
-- 🎯 **Thème sombre/clair** avec basculement en temps réel
-- 🎯 **Micro-animations** Framer Motion pour les interactions
+- ✅ **Dashboard interactif** avec KPI en temps réel et graphiques Recharts
+- ✅ **Gestion complète des opérations** (achats/ventes) avec formulaires dynamiques
+- ✅ **Inventaire avancé** avec traçabilité FIFO et gestion multi-dépôts
+- ✅ **Historique des mouvements** avec filtrage et groupement par date
+- ✅ **Système de paramètres** avec gestion des dépôts et configuration
+- ✅ **Authentification sécurisée** avec protection des routes
+- ✅ **Interface responsive** optimisée mobile/desktop
+- ✅ **Mode développement** avec données de test automatiques
 
-### 🔧 Composants shadcn/ui Complets
-- **Button, Card, Tabs, Table, Dialog, Alert, Toast** - Composants de base
-- **DataTable** ultra-performant avec TanStack Table
-- **KPI Cards** avec graphiques intégrés (line, area, bar, pie)
-- **Drawer, Dropdown, Popover, Tooltip** - Composants d'interaction
-- **Form** avec validation Zod et react-hook-form
-- **Date Picker, Select, Switch** - Composants de saisie
-- **Avatar, Skeleton, LoadingSpinner** - Composants utilitaires
+## 🌍 URLs de l'Application
 
-### 🎉 Fonctionnalités principales
+- **Demo Live**: https://3000-ivf9iwdltf18bf3v7zsnt-6532622b.e2b.dev
+- **Repository GitHub**: https://github.com/mtouma56/tradingGen
+- **Mode démo**: Connexion automatique en mode développement (sans Supabase)
 
-- ✅ **Gestion des opérations** (achats/ventes) avec calcul automatique des marges
-- ✅ **Inventaire FIFO** avec gestion des lots et valorisation automatique
-- ✅ **Calcul COGS** (Cost of Goods Sold) en temps réel selon la méthode choisie
-- ✅ **Dashboard avec KPIs graphiques** en temps réel avec Recharts
-- ✅ **Export CSV** de toutes les données
-- ✅ **Interface responsive** mobile-first avec dark mode
-- ✅ **Mode hors-ligne** (LocalStorage) ou **mode connecté** (Supabase)
+## 🏗️ Architecture des Données
 
-## 🌐 URLs de l'application
+### Modèles de Données Principaux
 
-- **📁 GitHub Repository**: https://github.com/mtouma56/tradingGen
-- **📁 Code source local**: `./`
-
-## 🏗️ Architecture des données
-
-### Modèles de données principaux
-
-#### 📦 **Operations** (Achats & Ventes)
-- Type d'opération (achat/vente)
-- Produit, quantités, prix unitaires
-- Calculs automatiques : coût total/kg, COGS, marges
-- Liaison automatique avec les stocks
-
-#### 🏭 **Dépôts** 
-- Gestion multi-dépôts
-- Localisation et statut actif/inactif
-
-#### 📊 **Lots d'inventaire**
-- Traçabilité complète des lots
-- Quantités restantes, coûts unitaires
-- Métadonnées (BL, fournisseur, notes)
-
-#### 🔄 **Mouvements de stock**
-- Entrées, sorties, transferts, ajustements
-- Historique complet des mouvements
-
-### Méthodes de valorisation
-
-#### 🔵 **FIFO (First In, First Out)**
-- Consommation des lots par ordre d'ancienneté
-- Calcul COGS basé sur les lots les plus anciens
-- Optimal pour les produits périssables
-
-#### 🟠 **Coût Moyen Pondéré**
-- Calcul basé sur le coût moyen du stock disponible
-- Lissage des variations de prix
-- Adapté aux produits homogènes
-
-## 📱 Guide utilisateur
-
-### 🏠 **Dashboard Moderne**
-- **KPIs graphiques en temps réel** avec Recharts intégré
-- **Onglets interactifs** : Overview, Analytics, Operations
-- **Graphiques dynamiques** : Line, Area, Bar, Pie dans les KPI Cards
-- **Alertes intelligentes** sur les marges négatives et stock faible
-- **Animations Framer Motion** pour les transitions
-
-### 🛒 **Opérations**
-1. **Interface moderne** avec formulaires shadcn/ui
-2. **Validation Zod** en temps réel
-3. **Tableaux TanStack** avec tri, filtrage, pagination
-4. **Modals Dialog** pour création/édition
-5. **Toast notifications** pour feedback utilisateur
-
-### 📦 **Inventaire**
-- **DataTable avancé** avec TanStack Table
-- **Colonnes configurables** avec show/hide
-- **Export CSV/Excel** intégré
-- **Recherche globale** et filtres par colonne
-- **Pagination intelligente** avec tailles variables
-
-### 📊 **Logique métier** (Préservée intégralement)
-
-#### Achat → Entrée de stock
-```
-Achat de 1000kg d'hévéa à 520 FCFA/kg
-+ Chargement: 30 FCFA/kg
-+ Transport: 45 FCFA/kg  
-+ Autres: 15 FCFA/kg
-= Coût total: 610 FCFA/kg
-➡️ Crée un lot de 1000kg à 610 FCFA/kg
+#### **Operations Table**
+```sql
+- id (UUID) - Identifiant unique
+- type ('achat' | 'vente') - Type d'opération
+- date_operation (Date) - Date de l'opération
+- produit (Text) - Type de produit (ex: "Hévéa Grade A")
+- quantite_kg (Decimal) - Quantité en kilogrammes
+- prix_achat_par_kg / prix_vente_par_kg (Decimal) - Prix unitaires
+- chargement_par_kg, transport_par_kg, autres_depenses_par_kg (Decimal) - Coûts
+- depot_id (UUID) - Référence au dépôt
+- point_achat / point_vente (Text) - Lieu d'achat/vente
+- Champs calculés: cout_total_par_kg, marge_totale, chiffre_affaires
 ```
 
-#### Vente → Sortie FIFO
-```
-Vente de 500kg d'hévéa à 650 FCFA/kg
-➡️ Consomme le lot le plus ancien (610 FCFA/kg)
-➡️ COGS: 610 FCFA/kg
-➡️ Marge: 650 - 610 = 40 FCFA/kg
-➡️ Marge totale: 40 × 500 = 20,000 FCFA
+#### **Lots_Inventaire Table**
+```sql
+- id (UUID) - Identifiant unique du lot
+- produit (Text) - Type de produit
+- depot_id (UUID) - Dépôt de stockage
+- date_entree (Date) - Date d'entrée en stock
+- quantite_kg_restante (Decimal) - Quantité restante (FIFO)
+- cout_unitaire_par_kg (Decimal) - Coût d'achat unitaire
+- metadata (JSONB) - Informations complémentaires (BL, fournisseur, notes)
 ```
 
-## 🚀 Déploiement & Configuration
+#### **Mouvements_Stock Table**
+```sql
+- id (UUID) - Identifiant unique
+- type ('entree' | 'sortie' | 'transfert' | 'ajustement') - Type de mouvement
+- date_mouvement (Date) - Date du mouvement
+- produit (Text) - Produit concerné
+- depot_source_id / depot_cible_id (UUID) - Dépôts source/destination
+- quantite_kg (Decimal) - Quantité déplacée
+- operation_id (UUID) - Lien vers l'opération source
+- note (Text) - Note explicative
+```
 
-### 📋 Prérequis
-- Node.js 18+
+### Services de Stockage
+- **Base de données**: Supabase PostgreSQL avec RLS (Row Level Security)
+- **Mode développement**: LocalStorage pour tests sans configuration
+- **Authentification**: Supabase Auth avec profils utilisateurs
+- **Gestion d'état**: React Context API pour auth et data repository pattern
+
+## 📖 Guide Utilisateur
+
+### 🔐 Connexion
+1. **Mode Production**: Utilisez vos identifiants Supabase
+2. **Mode Développement**: Cliquez sur "Se connecter" (connexion automatique)
+
+### 📊 Dashboard
+- **KPI principaux**: Total opérations, stock actuel, chiffre d'affaires, valeur stock
+- **Graphiques interactifs**: Évolution des ventes, marges par produit
+- **Onglets**: Vue d'ensemble, Ventes, Stock, Opérations récentes
+- **Filtres temporels**: 7 jours, 30 jours, 3 mois, 1 an
+
+### 🛒 Gestion des Opérations
+- **Création d'opérations**: Formulaire dynamique achat/vente
+- **Champs automatiques**: Calcul des coûts totaux et marges
+- **Filtrage avancé**: Par type, produit, point d'achat/vente
+- **Actions**: Modification, suppression, export
+
+### 📦 Inventaire
+- **Vue résumé**: Stock par produit avec valeurs
+- **Lots détaillés**: Traçabilité FIFO complète
+- **Vue par dépôt**: Organisation par lieu de stockage
+- **Métadonnées**: Numéros BL, fournisseurs, notes
+
+### 📈 Mouvements
+- **Historique complet**: Tous les mouvements de stock
+- **Groupement par date**: Organisation chronologique
+- **Types de mouvements**: Entrées, sorties, transferts, ajustements
+- **Statistiques**: Totaux et stock net
+
+### ⚙️ Paramètres
+- **Configuration FIFO**: Mode de valorisation
+- **Gestion des dépôts**: Création, modification, activation/désactivation
+- **Informations système**: Mode de base de données, utilisateur actuel
+
+## 🚀 Déploiement et Configuration
+
+### Prérequis
+- Node.js 18+ 
 - npm ou yarn
+- Compte Supabase (pour la production)
 
-### ⚡ Installation rapide
+### Installation Locale
 ```bash
+# Cloner le repository
 git clone https://github.com/mtouma56/tradingGen.git
 cd tradingGen
+
+# Installer les dépendances
 npm install
-npm run build     # IMPORTANT: Build requis pour l'interface moderne
-npm run dev       # Démarrage du serveur de développement
+
+# Lancer en mode développement
+npm run dev
+
+# Application disponible sur http://localhost:3000
 ```
 
-### 🔧 PM2 Configuration (Sandbox)
-```bash
-# L'application utilise PM2 pour la gestion des processus
-pm2 start ecosystem.config.cjs
-pm2 logs --nostream
-```
+### Configuration Supabase (Production)
 
-### 🔧 Variables d'environnement
+1. **Créer un projet Supabase**
+   ```bash
+   # Aller sur https://supabase.com
+   # Créer un nouveau projet
+   # Récupérer URL et ANON_KEY
+   ```
 
-**Mode LocalStorage (par défaut)** :
-Aucune configuration requise - l'application fonctionne hors-ligne.
+2. **Configuration des variables d'environnement**
+   ```bash
+   # Copier le fichier d'exemple
+   cp .env.example .env
+   
+   # Éditer .env avec vos valeurs Supabase
+   VITE_SUPABASE_URL=https://votre-projet.supabase.co
+   VITE_SUPABASE_ANON_KEY=votre-anon-key
+   ```
 
-**Mode Supabase (optionnel)** :
-```bash
-# Copier le fichier d'exemple
-cp .env.example .env
+3. **Initialiser la base de données**
+   ```sql
+   -- Exécuter dans l'éditeur SQL de Supabase
+   -- 1. Copier le contenu de supabase/migrations/001_initial_schema.sql
+   -- 2. Exécuter le script
+   -- 3. Optionnel: Exécuter supabase/seed.sql pour les données de test
+   ```
 
-# Configurer Supabase
-VITE_SUPABASE_URL=your-supabase-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
+4. **Déploiement sur Vercel**
+   ```bash
+   # Connecter le repository à Vercel
+   # Ajouter les variables d'environnement dans Vercel
+   # Déployer automatiquement depuis GitHub
+   ```
 
-### 📜 Scripts disponibles
-```bash
-npm run dev       # Développement local (Vite)
-npm run build     # Build production avec Tailwind CSS
-npm run preview   # Preview du build
-npm run lint      # Vérification du code avec ESLint
-```
+### Configuration des Utilisateurs
 
-## 🎯 Statut du développement
+1. **Créer des utilisateurs dans Supabase Auth**
+2. **Définir les rôles** dans la table `profiles`
+3. **Maximum 5-6 utilisateurs** recommandé pour l'équipe
 
-### ✅ **Fonctionnalités implémentées**
+## 📋 Statut de Déploiement
 
-#### 🎨 **Interface Moderne (NOUVEAU)**
-- [x] **Refactor complet UI/UX** avec shadcn/ui
-- [x] **Topbar moderne** avec recherche, notifications, menu utilisateur
-- [x] **Sidebar collapsible** avec animations et tooltips
-- [x] **Dashboard révolutionnaire** avec KPI Cards et Recharts
-- [x] **Tableaux TanStack** avec tri, filtrage, pagination, export
-- [x] **Design system** avec couleurs cyan/green/amber
-- [x] **Thème sombre/clair** avec basculement fluide
-- [x] **Micro-animations** Framer Motion
+- **Statut**: ✅ **Application complètement fonctionnelle**
+- **Plateforme**: Sandbox de développement (temporaire)
+- **Base de données**: Mode LocalStorage (données temporaires)
+- **Tech Stack**: React 19 + Vite + TypeScript + TailwindCSS + Supabase
+- **Dernière mise à jour**: 25 août 2025
 
-#### 🔧 **Backend & Logique Métier**
-- [x] Architecture complète avec TypeScript
-- [x] Repository pattern (Supabase/LocalStorage)
-- [x] Hooks de valorisation FIFO et coût moyen
-- [x] Calculs en temps réel des marges et COGS
-- [x] Données de démonstration automatiques
+### URLs Fonctionnelles
+- `/login` - Page de connexion
+- `/dashboard` - Tableau de bord avec KPI
+- `/operations` - Gestion des achats/ventes  
+- `/inventaire` - État des stocks
+- `/mouvements` - Historique des mouvements
+- `/parametres` - Configuration système
 
-#### 📱 **Fonctionnalités Utilisateur**
-- [x] Dashboard interactif avec KPIs graphiques
-- [x] Gestion complète des opérations
-- [x] Inventaire avec détail des lots
-- [x] Export CSV multi-format
-- [x] Interface responsive + dark mode
+## 🔮 Prochaines Étapes Recommandées
 
-### 🚧 **Prochaines étapes recommandées**
-- [ ] **Finaliser Operations Page** : Formulaires react-hook-form complets
-- [ ] **Page Mouvements moderne** : TanStack Table + filtres avancés
-- [ ] **Page Paramètres** : Interface shadcn/ui complète
-- [ ] **Validation Zod** : Schémas complets pour tous les formulaires
-- [ ] **Tests Playwright** : Tests E2E de l'interface moderne
-- [ ] **Notifications temps réel** : Système de toast avancé
-- [ ] **Authentification** : Intégration Supabase Auth
-- [ ] **PWA** : Support mode hors-ligne avancé
+### Fonctionnalités à Implémenter
+1. **Calculs FIFO avancés** - Intégration complète de la logique FIFO dans les ventes
+2. **Export CSV/Excel** - Fonctionnalité d'export des données
+3. **Notifications** - Alertes de stock faible, notifications système
+4. **Rapports avancés** - Génération de rapports PDF
+5. **API REST** - Endpoints pour intégrations externes
+6. **Mode offline** - Synchronisation hors ligne
+7. **Audit trail** - Historique complet des modifications
 
-## 🛠️ Stack technique
+### Optimisations Techniques
+1. **Performance** - Optimisation des requêtes et cache
+2. **Sécurité** - Audit de sécurité approfondi
+3. **Tests** - Suite de tests unitaires et d'intégration
+4. **Documentation API** - Documentation Swagger/OpenAPI
+5. **CI/CD** - Pipeline de déploiement automatisé
 
-### **Frontend Moderne**
-- **React 19** + **TypeScript** + **Vite**
-- **Tailwind CSS v4** + **shadcn/ui** + **Lucide React**
-- **TanStack Table** pour les tableaux avancés
-- **Recharts** pour les graphiques intégrés
-- **Framer Motion** pour les animations
-- **react-hook-form** + **Zod** pour validation
-- **Date-fns** pour la gestion des dates
-
-### **Backend/Données**
-- **Supabase** (PostgreSQL + Auth) *ou*
-- **LocalStorage** (mode hors-ligne)
-- **Repository Pattern** pour l'abstraction des données
-
-### **Développement & Déploiement**
-- **PM2** pour la gestion des processus
-- **Wrangler** pour le développement Cloudflare
-- **GitHub** pour le versioning
-- **ESLint** + **Prettier** pour la qualité du code
-
-### **Architecture**
-- **Hooks personnalisés** pour la logique métier
-- **TypeScript strict** avec interfaces complètes
-- **Composants shadcn/ui** réutilisables
-- **Mobile-first** responsive design
-- **Micro-animations** pour l'expérience utilisateur
-
-## 📊 Données de démonstration
-
-L'application charge automatiquement des données réalistes :
-- **4 dépôts** (Abidjan, Bouaké, Soubré, Yamoussoukro)
-- **5 achats** avec différents produits (Hévéa, Maïs, Cacao, Anacarde, Café)
-- **2 ventes** avec calculs COGS automatiques
-- **1 transfert** entre dépôts
-- **1 ajustement** d'inventaire (perte)
-
-## 🎉 Points forts de l'implémentation
-
-### 🔥 **Interface Ultra-Moderne (NOUVEAU)**
-- **shadcn/ui complet** avec tous les composants modernes
-- **Dashboard révolutionnaire** avec graphiques intégrés
-- **Tableaux avancés** TanStack avec performances optimales
-- **Animations fluides** Framer Motion pour l'UX
-- **Design system** cohérent avec couleurs cyan/green/amber
-
-### 🔥 **Valorisation FIFO avancée**
-- Consommation multi-lots automatique
-- Calcul COGS précis avec historique
-- Mise à jour temps réel des quantités
-
-### 💰 **Calculs financiers complets**
-- Coût total par kg (achat + frais)
-- COGS basé sur stock réel
-- Marges nettes avec alertes
-
-### 📱 **UX Révolutionnaire**
-- **Interface shadcn/ui** ultra-moderne
-- **KPI Cards graphiques** avec Recharts intégré
-- **Tableaux TanStack** avec fonctionnalités avancées
-- **Animations Framer Motion** fluides
-- **Thème sombre/clair** avec basculement instantané
-
-### 🔄 **Flexibilité technique**
-- Bascule automatique Supabase/LocalStorage
-- Architecture modulaire et extensible
-- TypeScript strict pour la robustesse
-- **Mode STRICT** - Logique métier 100% préservée
-
-## 📈 Métriques de Performance
-
-### **Build moderne**
-- **52 fichiers** mis à jour dans le dernier commit
-- **8426 lignes** de code ajoutées pour l'interface moderne
-- **16KB** CSS Tailwind compilé optimisé
-- **1MB** JavaScript avec tree-shaking optimal
-
-### **Composants shadcn/ui**
-- **25+ composants** implémentés et configurés
-- **TanStack Table** pour performance maximale
-- **Recharts** intégré dans les KPI Cards
-- **Framer Motion** pour animations 60fps
+### Déploiement Production
+1. **Configuration Supabase** - Base de données production
+2. **Domaine personnalisé** - URL de production
+3. **Monitoring** - Outils de surveillance (Sentry, etc.)
+4. **Backup** - Stratégie de sauvegarde des données
+5. **Scaling** - Préparation à la montée en charge
 
 ---
 
-## 🚀 **REFACTOR UI/UX COMPLET - MODE STRICT RESPECTÉ**
-
-✅ **Interface moderne shadcn/ui** entièrement implémentée  
-✅ **Toute la logique métier FIFO préservée** intégralement  
-✅ **Design system** cyan/green/amber appliqué  
-✅ **Composants avancés** : TanStack Table, Recharts, Framer Motion  
-✅ **Thème sombre/clair** fonctionnel  
-✅ **GitHub synchronisé** avec le nouveau code  
-
-**🌟 L'application est maintenant équipée d'une interface ultra-moderne tout en conservant sa puissante logique de trading FIFO !**
-
-**Version**: 2.0.0 - Interface Moderne shadcn/ui  
-**Dernière mise à jour**: 24 Août 2025  
-**Mode de déploiement**: ✅ LocalStorage (Hors-ligne) / ✅ Supabase (Connecté)  
-**Repository GitHub**: https://github.com/mtouma56/tradingGen
+**© 2025 Trading Hévéa - Système de Gestion Optimisé pour les Équipes Trading**
