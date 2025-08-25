@@ -36,9 +36,8 @@
 
 ## 🌐 URLs de l'application
 
-- **🚀 Application Live**: https://3000-icmsarcraz9y3bljxdtx8-6532622b.e2b.dev/
 - **📁 GitHub Repository**: https://github.com/mtouma56/tradingGen
-- **📁 Code source local**: `/home/user/webapp/`
+- **📁 Code source local**: `./`
 
 ## 🏗️ Architecture des données
 
@@ -131,7 +130,7 @@ git clone https://github.com/mtouma56/tradingGen.git
 cd tradingGen
 npm install
 npm run build     # IMPORTANT: Build requis pour l'interface moderne
-npm run dev:sandbox  # Pour développement en sandbox
+npm run dev       # Démarrage du serveur de développement
 ```
 
 ### 🔧 PM2 Configuration (Sandbox)
@@ -158,12 +157,10 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 ### 📜 Scripts disponibles
 ```bash
-npm run dev              # Développement local (Vite)
-npm run dev:sandbox      # Développement sandbox (wrangler)
-npm run build            # Build production avec Tailwind CSS
-npm run preview          # Preview du build
-npm run clean-port       # Nettoyer le port 3000
-npm run test             # Test de l'application
+npm run dev       # Développement local (Vite)
+npm run build     # Build production avec Tailwind CSS
+npm run preview   # Preview du build
+npm run lint      # Vérification du code avec ESLint
 ```
 
 ## 🎯 Statut du développement
