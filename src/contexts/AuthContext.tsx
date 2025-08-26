@@ -1,175 +1,106 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase, isSupabaseAvailable } from '../lib/supabase'
+// src/contexts/AuthContext.tsx
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react"
+import { createClient, Session, User } from "@supabase/supabase-js"
 
-interface Profile {
-  id: string
-  email: string
-  full_name: string | null
-  role: 'admin' | 'user'
-}
+// --- Supabase client (from Vite env) ---
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-interface AuthContextType {
+export const isSupabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey)
+
+export const supabase = isSupabaseEnabled
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  : (null as any)
+
+// --- Context types ---
+interface AuthContextValue {
   user: User | null
-  profile: Profile | null
   session: Session | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<void>
   isAuthenticated: boolean
   isSupabaseEnabled: boolean
+  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
+  signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
-
-interface AuthProviderProps {
-  children: React.ReactNode
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const isSupabaseEnabled = isSupabaseAvailable()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    if (!isSupabaseEnabled) {
-      // Mode développement sans Supabase - créer un utilisateur fictif
-      const mockUser = {
-        id: 'mock-user-id',
-        email: 'admin@tradinghevea.local',
-        full_name: 'Administrateur',
-        role: 'admin' as const
-      }
-      
-      setProfile(mockUser)
-      setLoading(false)
-      return
-    }
+    let isMounted = true
 
-    // Récupérer la session actuelle
-    supabase!.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadProfile(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          await loadProfile(session.user.id)
-        } else {
-          setProfile(null)
+    async function init() {
+      try {
+        if (!isSupabaseEnabled) {
+          // Dev mode: no Supabase configured → not authenticated but app can render
+          if (isMounted) {
+            setSession(null)
+            setUser(null)
+            setLoading(false)
+          }
+          return
         }
-        setLoading(false)
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [isSupabaseEnabled])
-
-  const loadProfile = async (userId: string) => {
-    if (!supabase) return
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('Error loading profile:', error)
-        return
-      }
-
-      if (data) {
-        setProfile({
-          id: data.id,
-          email: data.email,
-          full_name: data.full_name,
-          role: data.role || 'user'
+        // Get current session
+        const { data, error } = await supabase.auth.getSession()
+        if (error) console.warn("supabase.getSession error:", error)
+        if (isMounted) {
+          setSession(data.session)
+          setUser(data.session?.user ?? null)
+          setLoading(false)
+        }
+        // Subscribe to auth changes
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+          setSession(sess)
+          setUser(sess?.user ?? null)
         })
+        return () => {
+          sub.subscription.unsubscribe()
+        }
+      } catch (e) {
+        console.error(e)
+        if (isMounted) setLoading(false)
       }
-    } catch (error) {
-      console.error('Error in loadProfile:', error)
     }
-  }
+    init()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
-      return { error: null } // Mode développement
+    if (!isSupabaseEnabled) {
+      // Dev mode: simulate OK
+      return { data: { user: null }, error: null }
     }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    return { error }
-  }
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    if (!supabase) {
-      return { error: null } // Mode développement
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        }
-      }
-    })
-
-    return { error }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    return { data, error }
   }
 
   const signOut = async () => {
-    if (!supabase) {
-      setProfile(null)
-      return
-    }
-
-    await supabase.auth.signOut()
+    if (!isSupabaseEnabled) return
+    const { error } = await supabase.auth.signOut()
+    if (error) console.error("supabase.signOut error:", error)
   }
 
-  const isAuthenticated = isSupabaseEnabled ? !!session : !!profile
-
-  const value: AuthContextType = {
+  const value = useMemo<AuthContextValue>(() => ({
     user,
-    profile,
     session,
     loading,
+    isAuthenticated: Boolean(user),
+    isSupabaseEnabled,
     signIn,
-    signUp,
     signOut,
-    isAuthenticated,
-    isSupabaseEnabled
-  }
+  }), [user, session, loading])
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider")
+  return ctx
 }
