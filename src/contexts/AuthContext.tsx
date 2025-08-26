@@ -1,16 +1,10 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react"
-import { createClient, Session, User } from "@supabase/supabase-js"
+import { Session, User } from "@supabase/supabase-js"
+import { supabase, isSupabaseAvailable } from '../lib/supabase'
 
-// --- Supabase client (from Vite env) ---
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-
-export const isSupabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey)
-
-export const supabase = isSupabaseEnabled
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
-  : (null as any)
+// --- Supabase client (centralisé) ---
+export const isSupabaseEnabled = isSupabaseAvailable()
 
 // --- Context types ---
 interface AuthContextValue {

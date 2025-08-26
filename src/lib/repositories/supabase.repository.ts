@@ -13,16 +13,19 @@ export class SupabaseRepository implements DataRepository {
   
   // Operations
   async getOperations(filtres?: FiltresOperations): Promise<Operation[]> {
-    if (!supabase) throw new Error('Supabase not initialized');
+    if (!supabase) {
+      console.warn('Supabase not initialized, returning empty operations array');
+      return [];
+    }
 
     let query = supabase.from('operations').select('*');
 
     if (filtres) {
       if (filtres.date_debut) {
-        query = query.gte('date_operation', filtres.date_debut.toISOString());
+        query = query.gte('op_date', filtres.date_debut.toISOString());
       }
       if (filtres.date_fin) {
-        query = query.lte('date_operation', filtres.date_fin.toISOString());
+        query = query.lte('op_date', filtres.date_fin.toISOString());
       }
       if (filtres.produit) {
         query = query.ilike('produit', `%${filtres.produit}%`);
@@ -35,22 +38,50 @@ export class SupabaseRepository implements DataRepository {
       }
     }
 
-    const { data, error } = await query.order('date_operation', { ascending: false });
+    const { data, error } = await query.order('op_date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.warn('Error fetching operations:', error);
+      // Si c'est une erreur de colonne inexistante, essayer avec date_operation
+      if (error.code === '42703' && error.message.includes('op_date')) {
+        console.log('Trying with date_operation column...');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('operations')
+          .select('*')
+          .order('date_operation', { ascending: false });
+        
+        if (fallbackError) {
+          console.error('Both op_date and date_operation failed:', fallbackError);
+          return [];
+        }
+        
+        return (fallbackData || []).map(op => ({
+          ...op,
+          date_operation: new Date(op.date_operation)
+        }));
+      }
+      return [];
+    }
     
     return (data || []).map(op => ({
       ...op,
-      date_operation: new Date(op.date_operation)
+      date_operation: new Date(op.op_date || op.date_operation)
     }));
   }
 
   async createOperation(operation: Omit<Operation, 'id'>): Promise<Operation> {
     if (!supabase) throw new Error('Supabase not initialized');
 
+    // Transformer date_operation en op_date pour la base de données
+    const { date_operation, ...rest } = operation;
+    const operationData = {
+      ...rest,
+      op_date: date_operation
+    };
+
     const { data, error } = await supabase
       .from('operations')
-      .insert([operation])
+      .insert([operationData])
       .select()
       .single();
 
@@ -58,16 +89,22 @@ export class SupabaseRepository implements DataRepository {
     
     return {
       ...data,
-      date_operation: new Date(data.date_operation)
+      date_operation: new Date(data.op_date || data.date_operation)
     };
   }
 
   async updateOperation(id: string, operation: Partial<Operation>): Promise<Operation> {
     if (!supabase) throw new Error('Supabase not initialized');
 
+    // Transformer date_operation en op_date si présent
+    const { date_operation, ...rest } = operation;
+    const operationData = date_operation 
+      ? { ...rest, op_date: date_operation }
+      : operation;
+
     const { data, error } = await supabase
       .from('operations')
-      .update(operation)
+      .update(operationData)
       .eq('id', id)
       .select()
       .single();
@@ -76,7 +113,7 @@ export class SupabaseRepository implements DataRepository {
     
     return {
       ...data,
-      date_operation: new Date(data.date_operation)
+      date_operation: new Date(data.op_date || data.date_operation)
     };
   }
 
@@ -260,7 +297,14 @@ export class SupabaseRepository implements DataRepository {
 
   // Parametres
   async getParametres(): Promise<Parametres> {
-    if (!supabase) throw new Error('Supabase not initialized');
+    if (!supabase) {
+      console.warn('Supabase not initialized, returning default parameters');
+      return {
+        id: 'default',
+        mode_valorisation: 'FIFO',
+        devise_affichage: 'FCFA'
+      };
+    }
 
     const { data, error } = await supabase
       .from('parametres')
@@ -268,23 +312,45 @@ export class SupabaseRepository implements DataRepository {
       .single();
 
     if (error) {
+      console.warn('Error fetching parameters:', error);
       // Si pas de paramètres, créer des paramètres par défaut
       if (error.code === 'PGRST116') {
-        const defaultParams: Omit<Parametres, 'id'> = {
-          mode_valorisation: 'FIFO',
-          devise_affichage: 'FCFA'
-        };
-        
-        const { data: newData, error: insertError } = await supabase
-          .from('parametres')
-          .insert([defaultParams])
-          .select()
-          .single();
-        
-        if (insertError) throw insertError;
-        return newData;
+        try {
+          const defaultParams: Omit<Parametres, 'id'> = {
+            mode_valorisation: 'FIFO',
+            devise_affichage: 'FCFA'
+          };
+          
+          const { data: newData, error: insertError } = await supabase
+            .from('parametres')
+            .insert([defaultParams])
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.warn('Error creating default parameters:', insertError);
+            return {
+              id: 'default',
+              mode_valorisation: 'FIFO',
+              devise_affichage: 'FCFA'
+            };
+          }
+          return newData;
+        } catch (createError) {
+          console.warn('Failed to create default parameters, using fallback');
+          return {
+            id: 'default',
+            mode_valorisation: 'FIFO',
+            devise_affichage: 'FCFA'
+          };
+        }
       }
-      throw error;
+      // Retourner les paramètres par défaut en cas d'erreur
+      return {
+        id: 'default',
+        mode_valorisation: 'FIFO',
+        devise_affichage: 'FCFA'
+      };
     }
 
     return data;
