@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeProvider } from './lib/theme'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './lib/i18n'
-import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppLayout } from './components/layout/AppLayout'
 import { Login } from './pages/Login'
@@ -13,12 +12,10 @@ import { Operations } from './pages/Operations'
 import { Inventaire } from './pages/Inventaire'
 import { Mouvements } from './pages/Mouvements'
 import { Parametres } from './pages/Parametres'
-import { PageLoader } from './components/ui/LoadingSpinner'
 import { repository } from './lib/repositories'
 import './index.css'
 
 function AppContent() {
-  const [initialized, setInitialized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,11 +37,9 @@ function AppContent() {
         }
         
         console.log('✅ Application initialisée avec succès')
-        setInitialized(true)
       } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation:', error)
         setError(error instanceof Error ? error.message : 'Erreur inconnue')
-        setInitialized(true) // Continue même en cas d'erreur
       } finally {
         setLoading(false)
       }
@@ -143,100 +138,98 @@ function AppContent() {
 
   // Application principale avec routing
   return (
-    <Router>
-      <Routes>
-        {/* Route publique de connexion */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* Routes protégées */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <AnimatePresence mode="wait">
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route 
-                      path="/dashboard" 
-                      element={
-                        <motion.div
-                          key="dashboard"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Dashboard />
-                        </motion.div>
-                      } 
-                    />
-                    <Route 
-                      path="/operations" 
-                      element={
-                        <motion.div
-                          key="operations"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Operations />
-                        </motion.div>
-                      } 
-                    />
-                    <Route 
-                      path="/inventaire" 
-                      element={
-                        <motion.div
-                          key="inventaire"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Inventaire />
-                        </motion.div>
-                      } 
-                    />
-                    <Route 
-                      path="/mouvements" 
-                      element={
-                        <motion.div
-                          key="mouvements"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Mouvements />
-                        </motion.div>
-                      } 
-                    />
-                    <Route 
-                      path="/parametres" 
-                      element={
-                        <motion.div
-                          key="parametres"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Parametres />
-                        </motion.div>
-                      } 
-                    />
-                    {/* Route de fallback */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
-                </AnimatePresence>
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Route publique de connexion */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Routes protégées */}
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AnimatePresence mode="wait">
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <motion.div
+                        key="dashboard"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Dashboard />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="/operations"
+                    element={
+                      <motion.div
+                        key="operations"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Operations />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="/inventaire"
+                    element={
+                      <motion.div
+                        key="inventaire"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Inventaire />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="/mouvements"
+                    element={
+                      <motion.div
+                        key="mouvements"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Mouvements />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="/parametres"
+                    element={
+                      <motion.div
+                        key="parametres"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Parametres />
+                      </motion.div>
+                    }
+                  />
+                  {/* Route de fallback */}
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </AnimatePresence>
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   )
 }
 
@@ -244,9 +237,7 @@ function App() {
   return (
     <I18nextProvider i18n={i18n}>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+        <AppContent />
       </ThemeProvider>
     </I18nextProvider>
   )
