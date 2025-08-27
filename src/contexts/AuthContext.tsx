@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react"
 import { createClient, Session, User } from "@supabase/supabase-js"
+import { Profile } from "../types"
 
 // --- Supabase client (from Vite env) ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -16,6 +17,7 @@ export const supabase = isSupabaseEnabled
 interface AuthContextValue {
   user: User | null
   session: Session | null
+  profile: Profile | null
   loading: boolean
   isAuthenticated: boolean
   isSupabaseEnabled: boolean
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isMounted) {
             setSession(null)
             setUser(null)
+            setProfile(null)
             setLoading(false)
           }
           return
@@ -50,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setSession(data.session)
           setUser(data.session?.user ?? null)
+          setProfile(null)
           setLoading(false)
         }
         // Subscribe to auth changes
@@ -71,6 +76,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Load profile when user changes
+  useEffect(() => {
+    let active = true
+    async function loadProfile() {
+      if (!isSupabaseEnabled || !user) {
+        if (active) setProfile(null)
+        return
+      }
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+        if (error) {
+          console.warn("supabase.getProfile error:", error)
+        }
+        if (active) setProfile(data ?? null)
+      } catch (e) {
+        console.error(e)
+        if (active) setProfile(null)
+      }
+    }
+    loadProfile()
+    return () => {
+      active = false
+    }
+  }, [user])
+
   const signIn = async (email: string, password: string) => {
     if (!isSupabaseEnabled) {
       // Dev mode: simulate OK
@@ -89,12 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     user,
     session,
+    profile,
     loading,
     isAuthenticated: Boolean(user),
     isSupabaseEnabled,
     signIn,
     signOut,
-  }), [user, session, loading])
+  }), [user, session, profile, loading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
