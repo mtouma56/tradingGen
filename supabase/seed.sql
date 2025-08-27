@@ -14,7 +14,7 @@ INSERT INTO parametres (id, mode_valorisation, devise_affichage, cout_stockage_p
 ON CONFLICT (id) DO NOTHING;
 
 -- Insertion d'opérations d'achat (génère automatiquement du stock)
-INSERT INTO operations (id, type, date_operation, produit, point_achat, depot_id, quantite_kg, prix_achat_par_kg, chargement_par_kg, transport_par_kg, autres_depenses_par_kg) VALUES 
+INSERT INTO operations (id, type, op_date, produit, point_achat, depot_id, quantite_kg, prix_achat_par_kg, chargement_par_kg, transport_par_kg, autres_depenses_par_kg) VALUES
     ('o1234567-89ab-cdef-0123-456789abcdef', 'achat', '2024-01-15', 'Hévéa Grade A', 'Plantation Koumassi', 'd1234567-89ab-cdef-0123-456789abcdef', 500.000, 850.00, 50.00, 25.00, 15.00),
     ('o2234567-89ab-cdef-0123-456789abcdef', 'achat', '2024-01-20', 'Hévéa Grade A', 'Plantation Dabou', 'd1234567-89ab-cdef-0123-456789abcdef', 750.000, 875.00, 45.00, 30.00, 10.00),
     ('o3234567-89ab-cdef-0123-456789abcdef', 'achat', '2024-01-25', 'Hévéa Grade B', 'Coopérative Agboville', 'd2234567-89ab-cdef-0123-456789abcdef', 300.000, 720.00, 40.00, 35.00, 20.00),
@@ -23,7 +23,7 @@ INSERT INTO operations (id, type, date_operation, produit, point_achat, depot_id
 ON CONFLICT (id) DO NOTHING;
 
 -- Insertion d'opérations de vente
-INSERT INTO operations (id, type, date_operation, produit, point_vente, depot_id, quantite_kg, prix_vente_par_kg, chargement_par_kg, transport_par_kg, autres_depenses_par_kg) VALUES 
+INSERT INTO operations (id, type, op_date, produit, point_vente, depot_id, quantite_kg, prix_vente_par_kg, chargement_par_kg, transport_par_kg, autres_depenses_par_kg) VALUES
     ('o6234567-89ab-cdef-0123-456789abcdef', 'vente', '2024-02-10', 'Hévéa Grade A', 'Export Abidjan Port', 'd1234567-89ab-cdef-0123-456789abcdef', 200.000, 1150.00, 30.00, 20.00, 8.00),
     ('o7234567-89ab-cdef-0123-456789abcdef', 'vente', '2024-02-15', 'Hévéa Grade A', 'Usine Transformation', 'd1234567-89ab-cdef-0123-456789abcdef', 300.000, 1200.00, 25.00, 15.00, 5.00),
     ('o8234567-89ab-cdef-0123-456789abcdef', 'vente', '2024-02-20', 'Hévéa Grade B', 'Marché Local', 'd2234567-89ab-cdef-0123-456789abcdef', 150.000, 950.00, 35.00, 25.00, 10.00)

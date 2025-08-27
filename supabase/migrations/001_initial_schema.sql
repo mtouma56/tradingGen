@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS depots (
 CREATE TABLE IF NOT EXISTS operations (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     type TEXT NOT NULL CHECK (type IN ('achat', 'vente')),
-    date_operation DATE NOT NULL,
+    op_date DATE NOT NULL,
     produit TEXT NOT NULL,
     point_achat TEXT,
     point_vente TEXT,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- Index pour optimiser les requêtes
-CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date_operation);
+CREATE INDEX IF NOT EXISTS idx_operations_op_date ON operations(op_date);
 CREATE INDEX IF NOT EXISTS idx_operations_produit ON operations(produit);
 CREATE INDEX IF NOT EXISTS idx_operations_depot ON operations(depot_id);
 CREATE INDEX IF NOT EXISTS idx_operations_type ON operations(type);
