@@ -4,6 +4,14 @@ export type OperationType = 'achat' | 'vente';
 export type MouvementType = 'entree' | 'sortie' | 'transfert' | 'ajustement';
 export type ModeValorisationType = 'FIFO' | 'MOYEN_PONDERE';
 
+// Table profiles (utilisateurs)
+export interface Profile {
+  id: string;
+  email: string;
+  full_name?: string;
+  role: 'admin' | 'user';
+}
+
 // Table operations
 export interface Operation {
   id: string;
