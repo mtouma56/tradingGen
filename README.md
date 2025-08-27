@@ -138,11 +138,15 @@ npm run dev
    ```bash
    # Copier le fichier d'exemple
    cp .env.example .env
-   
-   # Éditer .env avec vos valeurs Supabase
+
+   # Éditer .env avec vos valeurs Supabase (ne pas committer ce fichier)
    VITE_SUPABASE_URL=https://votre-projet.supabase.co
    VITE_SUPABASE_ANON_KEY=votre-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=votre-service-role-key
    ```
+
+   Regénérez les clés depuis le tableau de bord Supabase si l'une d'elles est compromise.
+   En production, fournissez ces variables via un gestionnaire de secrets (Vercel, variables d'environnement Docker, etc.).
 
 3. **Initialiser la base de données**
    ```sql
