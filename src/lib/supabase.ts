@@ -1,12 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase, isSupabaseEnabled } from '../contexts/AuthContext';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Re-export the shared Supabase client instantiated in AuthContext.
+export { supabase };
 
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Helper used by the repository factory to know if Supabase is configured.
+export const isSupabaseAvailable = () => isSupabaseEnabled;
 
-export const isSupabaseAvailable = () => {
-  return supabase !== null;
-};
