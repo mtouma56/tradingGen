@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeProvider } from './lib/theme'
 import { I18nextProvider } from 'react-i18next'
@@ -143,11 +143,10 @@ function AppContent() {
 
   // Application principale avec routing
   return (
-    <Router>
-      <Routes>
+    <Routes>
         {/* Route publique de connexion */}
         <Route path="/login" element={<Login />} />
-        
+
         {/* Routes protégées */}
         <Route
           path="/*"
@@ -236,7 +235,6 @@ function AppContent() {
           }
         />
       </Routes>
-    </Router>
   )
 }
 

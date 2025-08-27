@@ -19,10 +19,10 @@ export class SupabaseRepository implements DataRepository {
 
     if (filtres) {
       if (filtres.date_debut) {
-        query = query.gte('date_operation', filtres.date_debut.toISOString());
+        query = query.gte('op_date', filtres.date_debut.toISOString());
       }
       if (filtres.date_fin) {
-        query = query.lte('date_operation', filtres.date_fin.toISOString());
+        query = query.lte('op_date', filtres.date_fin.toISOString());
       }
       if (filtres.produit) {
         query = query.ilike('produit', `%${filtres.produit}%`);
@@ -35,48 +35,61 @@ export class SupabaseRepository implements DataRepository {
       }
     }
 
-    const { data, error } = await query.order('date_operation', { ascending: false });
-    
+    const { data, error } = await query.order('op_date', { ascending: false });
+
     if (error) throw error;
-    
-    return (data || []).map(op => ({
-      ...op,
-      date_operation: new Date(op.date_operation)
-    }));
+
+    return (data || []).map((op: any) => {
+      const { op_date, ...rest } = op;
+      return {
+        ...rest,
+        date_operation: new Date(op_date)
+      } as Operation;
+    });
   }
 
   async createOperation(operation: Omit<Operation, 'id'>): Promise<Operation> {
     if (!supabase) throw new Error('Supabase not initialized');
 
+    const { date_operation, ...rest } = operation;
+
     const { data, error } = await supabase
       .from('operations')
-      .insert([operation])
+      .insert([{ ...rest, op_date: date_operation.toISOString() }])
       .select()
       .single();
 
     if (error) throw error;
-    
+
+    const { op_date, ...returned } = data as any;
     return {
-      ...data,
-      date_operation: new Date(data.date_operation)
+      ...returned,
+      date_operation: new Date(op_date)
     };
   }
 
   async updateOperation(id: string, operation: Partial<Operation>): Promise<Operation> {
     if (!supabase) throw new Error('Supabase not initialized');
 
+    const { date_operation, ...rest } = operation;
+    const updateData = {
+      ...rest,
+      ...(date_operation ? { op_date: date_operation.toISOString() } : {})
+    };
+
     const { data, error } = await supabase
       .from('operations')
-      .update(operation)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    
+
+    const { op_date, ...returned } = data as any;
     return {
-      ...data,
-      date_operation: new Date(data.date_operation)
+      ...returned,
+      date_operation: new Date(op_date)
     };
   }
 

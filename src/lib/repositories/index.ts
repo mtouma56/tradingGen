@@ -1,11 +1,11 @@
 import { DataRepository } from '../../types';
 import { LocalStorageRepository } from './localStorage.repository';
 import { SupabaseRepository } from './supabase.repository';
-import { isSupabaseAvailable } from '../supabase';
+import { isSupabaseEnabled } from '../supabase';
 
 // Factory pour créer le bon repository selon la disponibilité de Supabase
 export function createRepository(): DataRepository {
-  if (isSupabaseAvailable()) {
+  if (isSupabaseEnabled) {
     console.log('🔗 Utilisation de Supabase comme backend');
     return new SupabaseRepository();
   } else {

@@ -1,20 +1,12 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react"
-import { createClient, Session, User } from "@supabase/supabase-js"
-
-// --- Supabase client (from Vite env) ---
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-
-export const isSupabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey)
-
-export const supabase = isSupabaseEnabled
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
-  : (null as any)
+import { Session, User } from "@supabase/supabase-js"
+import { supabase, isSupabaseEnabled } from "../lib/supabase"
 
 // --- Context types ---
 interface AuthContextValue {
   user: User | null
+  profile: any | null
   session: Session | null
   loading: boolean
   isAuthenticated: boolean
@@ -88,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => ({
     user,
+    profile: user,
     session,
     loading,
     isAuthenticated: Boolean(user),
