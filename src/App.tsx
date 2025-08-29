@@ -28,9 +28,9 @@ function AppContent() {
         // Initialiser le repository
         await repository.init()
         
-        // Charger les données de seed si c'est la première fois
+        // Charger les données de seed si c'est la première fois (dev uniquement)
         const operations = await repository.getOperations()
-        if (operations.length === 0) {
+        if (operations.length === 0 && process.env.NODE_ENV !== 'production') {
           console.log('🌱 Chargement des données de démonstration...')
           await repository.seedData()
           console.log('✅ Données de démonstration chargées')
